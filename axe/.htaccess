@@ -1,0 +1,7 @@
+AuthType Basic
+AuthName "Acesso restrito"
+# toda tentativa de acesso vai falhar, porque o arquivo de senha nao existe.
+# este comportamento é intencional.
+# não há nada para acessar aqui via web...
+AuthUserFile /nao/existe/axe.passwd
+Require valid-user

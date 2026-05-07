@@ -1,0 +1,10 @@
+RewriteEngine on
+
+# Impede acesso à raiz dos diretórios de posts e do axe
+RewriteRule /?20../[0-9]./$ / [R=301,L]
+RewriteRule /?20[0-9]./$ / [R=301,L]
+RewriteRule /axe/ / [R=301,L]
+
+# Impede acesso aos arquivos .src.html a não ser que se inclua uma (qualquer) query string
+RewriteCond %{QUERY_STRING} ^$
+RewriteRule /?(.*)\.src(\.html)$ / [R=301,L]

@@ -1,0 +1,8 @@
+		<item>
+		<title><![CDATA[%%POSTTITLE%%]]></title>
+		<link>%%BLOGURL%%%%POSTSURLPREFIX%%%%POSTURL%%</link>
+		<pubDate>%%POSTDATEFEED%%</pubDate>
+		<dc:creator><![CDATA[%%POSTAUTHOR%%]]></dc:creator>
+		<description><![CDATA[%%POSTSHORT%%]]></description>
+		<content:encoded><![CDATA[%%POSTBODY%%<p style="margin-top:1.5em; border-top:1px solid #d0d0d0;padding-top:0.3em;"><i>O artigo "<a href="%%BLOGURL%%%%POSTSURLPREFIX%%%%POSTURL%%">%%POSTTITLE%%</a>" foi originalmente publicado no site <a href="%%BLOGURL%%">%%BLOGTITLE%%</a>, de <a href="%%BLOGOWNERURL%%">%%BLOGOWNER%%</a>.</i></p>]]></content:encoded>					
+		</item>
