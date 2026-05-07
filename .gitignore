@@ -1,0 +1,19 @@
+### Dependências (Composer)
+/vendor/
+
+### Artefatos gerados (site publicado)
+/index*.html
+/archive*.html
+/tag-*.html
+/recentes.html
+/feed.xml
+/sitemap-axe.xml
+
+### Posts gerados (saída publicada)
+/20[0-9][0-9]/
+
+### Previews gerados
+/axepreview/*.html
+
+### Temporários
+*.temp

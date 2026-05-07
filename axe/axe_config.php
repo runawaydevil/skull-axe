@@ -34,6 +34,8 @@ $blogparms["PREVIEWSBASEURL"] = 'http://axe.test/axepreview/';
 
 $blogparms["BLOGLOCALE"] = 'pt_BR';
 $blogparms["EXIBIRPOPULARES"] = false;
+// Markdown no corpo dos posts (requer `composer install` na raiz do projeto). false = desligado.
+$blogparms["USE_MARKDOWN"] = false;
 
 error_reporting(E_ALL ^ E_NOTICE ^ E_USER_NOTICE);
 date_default_timezone_set('America/Sao_Paulo');

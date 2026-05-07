@@ -10,6 +10,8 @@ Guia para colocar o **Axe** em um servidor ou VM **Debian 12 (bookworm)** com PH
 
 Extensões PHP exóticas não são necessárias para o núcleo; o pacote `php-cli` do Debian costuma bastar.
 
+**Composer (opcional, neste fork):** se usares **Markdown** nos posts (`$blogparms["USE_MARKDOWN"] = true` em `axe/axe_config.php`), instala o [Composer](https://getcomposer.org/) na máquina onde corres `php axe.php` e, na **raiz do repositório** (pai de `axe/`), executa `composer install` para gerar `vendor/` com `league/commonmark`. O servidor web que só serve `.html` **não** precisa do Composer. Detalhes: [uso-do-blog-axe.md](uso-do-blog-axe.md), [seguranca-e-deploy.md](seguranca-e-deploy.md).
+
 ## 1. Pacotes base
 
 Como `root` ou com `sudo`:

@@ -73,7 +73,9 @@ $blogparms["PREVIEWSBASEURL"] = 'http://seu-site.com/blog/axepreview/';
 
 
 # idioma e localização
-$blogparms["BLOGLOCALE"] = 'pt_BR';	
+$blogparms["BLOGLOCALE"] = 'pt_BR';
+# corpo dos posts em Markdown (true/1/'true'); requer composer install na raiz (league/commonmark)
+$blogparms["USE_MARKDOWN"] = false;
 # mensagens do PHP que devem ser exibidas
 error_reporting(E_ALL ^ E_NOTICE ^ E_USER_NOTICE);
 # encontre o nome correto da sua timezone 

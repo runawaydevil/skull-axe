@@ -5,7 +5,7 @@
 							</div>
 							<aside>
 								<div class="socialplugs">
-								Compartilhe: [<a target="_blank" href="%%POSTTWITTHIS%%">Twitter</a>] [<a target="_blank" href="%%POSTSHARETHIS%%">Facebook</a>]
+								Compartilhe: [<a target="_blank" rel="noopener noreferrer" href="%%POSTTWITTHIS%%">Twitter</a>] [<a target="_blank" rel="noopener noreferrer" href="%%POSTSHARETHIS%%">Facebook</a>]
 								</div>
 								<div class="postmetadata">
 									%%POSTDATE%% %%POSTTAGS%%

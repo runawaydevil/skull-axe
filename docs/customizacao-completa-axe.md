@@ -14,7 +14,7 @@ Este guia descreve **onde** e **como** alterar cada camada do blog quando queres
 | **B.** Tema (visual + markup) | `axethemes/<nome-do-tema>/` | Layout de **todas** as páginas geradas: cabeçalho, rodapé, capa, artigo, feed, arquivo mensal, CSS, imagens do tema. |
 | **C.** Ficheiros opcionais no tema | Mesma pasta do tema | Menu lateral, HTML extra, blocos de anúncio (se existirem ficheiros). |
 | **D.** Plugins | `axe/plugins/*.php` | Filtrar ou substituir HTML em pontos fixos (capa, post, feed, variáveis). |
-| **E.** Núcleo do Axe | `axe/*.php` | Motor, catálogos, rebuild — **só** se precisares de comportamento novo que plugins não cobrem; mantém fork ou patch documentado. |
+| **E.** Núcleo do Axe | `axe/*.php` + `axe/lib/*.php` | Motor, catálogos, rebuild; módulos em `axe/lib/` (validação de paths, Markdown). Evita editar o núcleo sem necessidade — preferir tema e plugins. |
 
 Regra prática: **A → B → D → E**. Clonar o tema (`panzer3`) para um nome novo evita perder referência quando atualizares o projeto.
 
@@ -30,6 +30,7 @@ Copia `axe_config_exemplo.php` para `axe_config.php` e ajusta:
 - **Tema:** `THEMESPATH` (URL parcial, ex.: `axethemes/`), `THEME` (pasta dentro do tema, ex.: `panzer3/` ou `meu-tema/`).
 - **Listagens:** `NUMPOSTSFEED`, `NUMPOSTSCOVER`, `NUMFEATSCOVER` (destaques na capa).
 - **Locale:** `BLOGLOCALE`; `date_default_timezone_set(...)` no mesmo ficheiro.
+- **Markdown:** `USE_MARKDOWN` — `true` / `1` / `'true'` para interpretar o corpo dos posts como Markdown (requer `composer install` na raiz). Ver [uso-do-blog-axe.md](uso-do-blog-axe.md).
 
 ### Variáveis opcionais (avançado)
 
@@ -37,6 +38,8 @@ Definidas **só se precisares** — o exemplo oficial nem todas lista:
 
 | Variável | Uso |
 |----------|-----|
+| `USE_MARKDOWN` | Neste fork: activa conversão CommonMark do `POSTBODY` (depende de Composer). |
+| `HTMLLANG` | Idioma do elemento `<html lang="...">` no tema. Se omitido, o motor calcula a partir de `BLOGLOCALE` (ex.: `pt_BR` → `pt-BR`). |
 | `EXIBIRPOPULARES` | Se `true`, o tema pode carregar `populares.php` (ficheiro opcional na pasta do tema). |
 | `CSSFIXEDURL` | URL absoluta para CSS em testes locais; o `hack_the_header()` em `axe_lib.php` substitui o prefixo normal do tema por este valor nos headers. |
 | `YEARLY` | Modo de URLs por **ano** em vez de `ano/mês`; valor especial `"01"` no código — só relevante se herdares um blog com essa convenção. |
@@ -64,8 +67,8 @@ Todos os caminhos são relativos à pasta do tema (`THEMESDIR` + `THEME`). O PHP
 
 | Ficheiro | Função |
 |----------|--------|
-| `header.php` | `<head>`, início do `<body>`, cabeçalho global — usado na **capa**, **tags**, **artigo** (via `hack_the_header` / substituição de placeholders). |
-| `footer.php` | Fecho da página (sidebar, rodapé). |
+| `header.php` | `<head>`, início do `<body>`, cabeçalho global — usado na **capa**, **tags**, **artigo** (via `hack_the_header` / substituição de placeholders). No **panzer3** deste fork: doctype **HTML5**, `lang="%%HTMLLANG%%"`, `<header role="banner">`, abertura de `<main id="content" role="main">` (landmarks sem mudar o CSS herdado). |
+| `footer.php` | Fecho da página: `</main>`, `<nav>` em volta de `%%NAVLINKS%%`, `<aside id="sidebar">`, `<footer role="contentinfo">`. |
 | `single-body.php` | Corpo do **artigo** publicado (uma coluna com `%%POSTBODY%%` etc.). |
 | `single-body-preview.php` | Opcional — se existir, usado no modo preview da capa no post (`try_file_get_contents`). |
 | `capa-feat.php` | Cartão de **destaque** na capa. |
@@ -74,7 +77,7 @@ Todos os caminhos são relativos à pasta do tema (`THEMESDIR` + `THEME`). O PHP
 | `monthly-arch.php` | Cabeçalho/listagem de arquivo por mês. |
 | `monthly-post.php` | Item dentro do arquivo mensal. |
 | `feed.header`, `feed.item`, `feed.footer` | Template do **RSS** (XML). |
-| `css/style.css` | Folha principal (o `header.php` do panzer3 referencia este caminho). |
+| `css/style.css` | Folha principal (o `header.php` referencia `style.css?v=%%CSSVERSION%%`; o `mtime` do ficheiro é injetado em `axe_init` para *cache busting* automático). |
 | `images/` | Favicon, ícones Apple, etc. (caminhos em `header.php`). |
 
 Ficheiros **opcionais** (se existirem, são lidos):
@@ -101,16 +104,19 @@ php axe.php -Rf
 
 Os templates usam substituição de texto:
 
-- **Globais do blog:** `%%BLOGTITLE%%`, `%%BLOGURL%%`, `%%THEMESPATH%%`, `%%THEME%%`, `%%FEEDURL%%`, `%%LASTBUILDDATE%%`, `%%AXEVERSION%%`, etc. — construídos em `axe_init()` / listas em `axe_lib.php`.
+- **Globais do blog:** `%%BLOGTITLE%%`, `%%BLOGURL%%`, `%%THEMESPATH%%`, `%%THEME%%`, `%%FEEDURL%%`, `%%LASTBUILDDATE%%`, `%%AXEVERSION%%`, `%%CSSVERSION%%` (*mtime* de `css/style.css` para *cache busting*), `%%HTMLLANG%%` (atributo `lang` do documento), etc. — construídos em `axe_init()` / listas em `axe_lib.php`.
 - **Por artigo:** `%%POSTTITLE%%`, `%%POSTBODY%%`, `%%POSTDATE%%`, `%%POSTURL%%`, `%%POSTTAGS%%`, `%%POSTICON%%`, … — disponíveis quando um post está carregado.
 
 Convém manter no `header.php` as meta tags que queres (Open Graph, Twitter); usa os placeholders já presentes no panzer3 como modelo.
 
 ---
 
-## 5. HTML dos posts e `corrigehtml`
+## 5. HTML dos posts, Markdown e `corrigehtml`
 
-No corpo publicado, `corrigehtml()` em `axe_lib.php` aplica pequenas conversões (ex.: `<i>` → `<em>`, atalhos tipo `<*>`). Para markup extra no tema ou nos posts, trabalha em HTML **válido** e testa preview (`-v`).
+- Com **`USE_MARKDOWN`** desligado (por defeito), o corpo é **HTML**; `corrigehtml()` em `axe_lib.php` aplica pequenas conversões (ex.: `<i>` → `<em>`, atalhos tipo `<*>`).
+- Com **`USE_MARKDOWN`** ligado e Composer instalado, o Markdown é convertido para HTML **antes** de `corrigehtml()` (ver `axe/lib/markdown.php`).
+
+Para markup extra no tema ou nos posts, trabalha em HTML **válido** e testa preview (`-v`).
 
 ---
 
@@ -171,6 +177,9 @@ Estuda `axe/plugins/recentcomments.php` como exemplo que substitui marcadores no
 | Necessidade | Ficheiro |
 |-------------|----------|
 | Lista de includes do tema e `menu.php` | `axe/axe_lib.php` — `axe_init()` |
+| Validação `valida_dir` / `valida_url` | `axe/lib/validate_paths.php` |
+| Markdown opcional | `axe/lib/markdown.php` |
+| Flags CLI | `axe/cli_dispatch.php` + entrada em `axe/axe.php` |
 | Capa e rebuild | `axe/indexes.php` |
 | Página de artigo | `axe/single.php` |
 | Feed RSS | `axe/feed.php` + `feed.*` no tema |
@@ -179,4 +188,16 @@ Estuda `axe/plugins/recentcomments.php` como exemplo que substitui marcadores no
 
 ---
 
-*Documentação alinhada ao layout do repositório atual (tema panzer3, Axe referenciado em `axe_lib.php`).*
+## 11. Desenvolvimento e qualidade (fork)
+
+| Item | Descrição |
+|------|-----------|
+| `composer.json` | Raiz do projeto: `league/commonmark` (Markdown), `phpunit/phpunit` (dev). |
+| `vendor/` | Gerado por `composer install`; listado em `.gitignore` — em CI o lock garante versões fixas. |
+| `tests/` | PHPUnit; arranque em `tests/bootstrap.php`. |
+| `phpunit.xml` | Configuração da suíte. |
+| `.github/workflows/ci.yml` | `composer install`, `php -l` em `axe/**/*.php`, PHPUnit. |
+
+---
+
+*Documentação alinhada ao repositório atual: tema panzer3 (HTML5 + acessibilidade incremental), módulos em `axe/lib/`, Axe referenciado em `axe_lib.php`.*

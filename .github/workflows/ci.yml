@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - name: Composer install
+        run: composer install --no-interaction
+      - name: PHP syntax check (axe)
+        run: |
+          set -e
+          for f in $(find axe -name '*.php' -print); do
+            php -l "$f"
+          done
+      - name: PHPUnit
+        run: ./vendor/bin/phpunit

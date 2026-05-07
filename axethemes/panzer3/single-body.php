@@ -3,13 +3,12 @@
 								<article class="post instapaper_body perm">
 									%%POSTBODY%%	    
 								</article>
-								<aside>
+								<aside aria-label="Partilha e metadados do artigo">
 									<div class="socialplugs">
-									Compartilhe: <a target="_blank" href="%%POSTTWITTHIS%%">Twitter</a> | <a target="_blank" href="%%POSTSHARETHIS%%">Facebook</a>
+									Compartilhe: <a target="_blank" rel="noopener noreferrer" href="%%POSTTWITTHIS%%">Twitter</a> | <a target="_blank" rel="noopener noreferrer" href="%%POSTSHARETHIS%%">Facebook</a>
 									</div>
 									<div class="postmetadata">
 										%%POSTDATE%% %%POSTTAGS%%
 									</div>								
-								</aside>							
-							</p>
+								</aside>
 						</div>

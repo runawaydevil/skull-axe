@@ -28,6 +28,8 @@ O `<utilizador-do-site>` é o utilizador que criou quando adicionou o site no Cl
 
 Ative **SSL** no painel (Let’s Encrypt) e force **HTTPS**. Depois configure no Axe URLs com `https://`.
 
+**Composer (opcional):** no fork, Markdown nos posts (`USE_MARKDOWN`) exige `composer install` na **raiz** do projeto na máquina onde corres a CLI `php axe.php` (podes usar o mesmo utilizador SSH/SFTP do site). O Nginx do CloudPanel **não** precisa de servir `vendor/`. Ver [uso-do-blog-axe.md](uso-do-blog-axe.md).
+
 ## 2. Colocar o Axe dentro do document root
 
 O ideal é que **tudo** o que o Axe precisa viva **abaixo** da mesma raiz que define como `POSTSDIR`: a raiz `public` do site no CloudPanel.

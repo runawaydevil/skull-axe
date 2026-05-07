@@ -32,8 +32,6 @@ function cover_header($tipo='normal') {
 	setpageicon(substparms("%%BLOGURL%%%%THEMESPATH%%%%THEME%%images/apple-touch-icon.png"));
 	setpagedesc(blogparm('BLOGMOTTO'));		
 	setpagetitle(blogparm('BLOGTITLE'));
-	$pageurl=blogparm('BLOGURL').preg_replace('/'.basename(blogparm('POSTSDIR')).'\//',"/",$nome);
-	setpageurl($pageurl);	
 	$transfpost['%%POSTTWIT%%']=blogparm('BLOGTITLE')." ".blogparm('BLOGURL');
 	$tiheader=aplica_plugins('index',$tiheader,'header',$tipo);
 	$header=substpostvars(substparms($tiheader)); 
@@ -46,6 +44,7 @@ function cover_feature($tipo='normal') {
 	global $tifeat;
 	global $POST;	
 	global $ISINDEX;
+	global $nofirstimage;
 	$tifeat		=try_file_get_contents("capa-feat.php",true);
 	if (0===strlen($tifeat)) $tifeat=file_get_contents("capa-post.php",true);
 	$ISINDEX=true;
@@ -66,6 +65,7 @@ function cover_post($tipo='normal') {
 	global $tipost;
 	global $POST;
 	global $ISINDEX;
+	global $nofirstimage;
 	$tipost=file_get_contents("capa-post.php",true);
 	if (0===strlen($tipost)) $tipost=file_get_contents("capa-post.php",true);
 	$ISINDEX=true;
@@ -116,6 +116,7 @@ function rebuild($force=false) {
 	global $postsfiles;
 	global $quickrebuild;	
 	global $indexesonly;
+	$item="";
 	dmsg(blogparm('INPUTDIR').'posts/'."catalog.txt");
 	$postsfiles=file(blogparm('INPUTDIR').'posts/'."catalog.txt",FILE_IGNORE_NEW_LINES);
 	sort($postsfiles);
@@ -124,8 +125,6 @@ function rebuild($force=false) {
 	$containdexes=0;
 	for ($i=count($postsfiles)-1; $i >=0; $i--) {
 		if (0 == $contaitems % blogparm('NUMPOSTSCOVER')) {
-			$pageurl=blogparm('BLOGURL').preg_replace('/'.basename(blogparm('POSTSDIR')).'\//',"/",$nome);
-			setpageurl($pageurl);		
 			$item=cover_header();
 		}	
 		$fpost=$postsfiles[$i];
@@ -140,7 +139,7 @@ function rebuild($force=false) {
 			$k[1]=preg_replace('/(....\/)..(\/.*)$/',"\\1aBaB\\2",$k[1]);
 			$k[1]=preg_replace('/aBaB/',blogparm('YEARLY'),$k[1]);
 		}				
-   		if ($force || ($contaitens < 2*blogparm('NUMPOSTSCOVER'))) {
+   		if ($force || ($contaitems < 2*blogparm('NUMPOSTSCOVER'))) {
 			$myimportfile=blogparm('INPUTDIR').'posts/'.$k[1];
 			if (!is_file($myimportfile)) {
 				axe_error('Não existe o arquivo '.$k[1],E_USER_ERROR);

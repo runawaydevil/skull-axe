@@ -13,6 +13,10 @@ Este site usa o **Axe**, um gerador de blog estático em PHP (Augusto Campos). O
 | `axe/axe_config.php` | Configuração do blog (URLs, pastas, título, tema). **É aqui que você ajusta ambiente (local x produção).** |
 | `axe/axe_config_exemplo.php` | Modelo de configuração; copie/renomeie como referência. |
 | `axe/axe.php` | Linha de comando principal (publicar, preview, rebuild). |
+| `axe/cli_dispatch.php` | Definição das flags curtas/longas e despacho dos comandos CLI (extensão segura do `axe.php`). |
+| `axe/lib/` | Módulos incluídos por `axe_lib.php` (ex.: validação de caminhos, Markdown opcional). |
+| `composer.json` (raiz) | Dependências opcionais: Markdown (`league/commonmark`) e PHPUnit para testes. |
+| `tests/` | Testes PHPUnit (ex.: pipeline Markdown). |
 | `axe/staging/` | Onde você **coloca o rascunho em texto** antes de gerar o draft. |
 | `axe/drafts/` | Rascunhos PHP gerados pelo Axe (pré-visualização ou publicação). |
 | `axe/descriptors/posts/` | Descritores dos posts publicados (`YYYY/MM/slug.php`). |
@@ -43,9 +47,26 @@ Sem parâmetros, o script apenas lembra que é preciso passar um comando (`-d`, 
 
 Não há painel web embutido: o “botão publicar” é o terminal (ou um script `.bat` / atalho que chame os mesmos comandos).
 
-### Markdown
+### Markdown opcional (`USE_MARKDOWN`)
 
-O corpo do arquivo em `staging` deve ser **HTML**. Se quiser escrever em Markdown, converta para HTML antes de colar no staging, ou estenda o PHP do Axe com um conversor (não vem pronto neste projeto).
+Por defeito, o corpo em `staging` é tratado como **HTML** (como no Axe original).
+
+Neste fork podes activar **Markdown** no `axe/axe_config.php`:
+
+```php
+$blogparms["USE_MARKDOWN"] = true;
+```
+
+**Requisitos:**
+
+1. Na **raiz do repositório** (não dentro de `axe/`), executa `composer install` para instalar `league/commonmark` e gerar `vendor/autoload.php`.
+2. O motor carrega o autoload automaticamente em `axe_init()` se o ficheiro existir. Sem `vendor/`, com a flag activa, o PHP emite um **aviso** e o corpo **não** é convertido (fica como texto).
+
+**Comportamento:** o `POSTBODY` é convertido de Markdown para HTML **antes** de `corrigehtml()` e do resto do pipeline. A biblioteca está configurada com escape de HTML cru no Markdown e sem `javascript:` em links (ver `axe/lib/markdown.php`).
+
+**Staging:** mantém o mesmo formato de ficheiro (título na primeira linha, `tags:` opcional na segunda); o **corpo** pode ser Markdown (títulos `#`, listas, `**negrito**`, links, etc.) em vez de tags HTML.
+
+Se preferires HTML puro, deixa `$blogparms["USE_MARKDOWN"] = false` (valor por defeito no exemplo de config).
 
 ## Fluxo típico: escrever um post novo
 
@@ -212,9 +233,13 @@ Ajuste no mínimo:
 
 **Produção:** replique a lógica do exemplo com os caminhos do servidor Linux ou Windows do seu provedor. **Nunca** commite senhas; este CMS não exige banco — só arquivos.
 
+**Neste fork:** além das chaves clássicas, o `axe_config_exemplo.php` documenta `USE_MARKDOWN` (e o config local pode definir `HTMLLANG` para sobrescrever o `lang` do documento).
+
 ## Segurança e `.htaccess`
 
 O `.htaccess` na raiz redireciona acesso direto a algumas URLs (ex.: bloqueio de navegar em certas pastas). Mantenha `axe/` fora do que você expõe publicamente se o servidor permitir — no Laragon o projeto costuma servir tudo sob `www`; em produção, restrinja o que for possível.
+
+Riscos do modelo (descritores PHP, `.src.html`, permissões, Markdown, notificações `NOTIFYCMD`): **[seguranca-e-deploy.md](seguranca-e-deploy.md)**.
 
 ## Resumo dos comandos
 
@@ -230,11 +255,15 @@ O `.htaccess` na raiz redireciona acesso direto a algumas URLs (ex.: bloqueio de
 
 ## Onde pedir ajuda no código
 
-- Ajuda de linha de comando: final de `axe/axe.php` (mensagem se faltar comando).
-- Publicação / descritores: `axe/single.php`.
-- Draft a partir do staging: `axe/axe_lib.php` (`gera_draft`).
-- Variáveis de post (`%%POSTTITLE%%`, datas, URLs): `axe/axe_lib.php` (`loadpostvars` e afins).
+- **Flags e comandos CLI:** `axe/cli_dispatch.php` (`axe_cli_get_parameter_definitions`, `axe_cli_dispatch`).
+- **Entrada do script:** `axe/axe.php` (parse de opções, inclusão de `axe_lib.php`, `loadpostvars`, chamada ao despacho).
+- **Publicação / descritores:** `axe/single.php`.
+- **Draft a partir do staging:** `axe/axe_lib.php` (`gera_draft`).
+- **Variáveis de post** (`%%POSTTITLE%%`, datas, URLs): `axe/axe_lib.php` (`loadpostvars` e afins).
+- **Markdown opcional:** `axe/lib/markdown.php` (`axe_prepare_post_body`, `axe_use_markdown`).
+- **Validação de pastas/URLs da config:** `axe/lib/validate_paths.php`.
+- **Testes automatizados:** pasta `tests/` na raiz; `phpunit.xml`; CI em `.github/workflows/ci.yml` (sintaxe `php -l` + PHPUnit).
 
 ---
 
-*Documentação gerada para o projeto em `C:\laragon\www\axe`, alinhada ao Axe 0.98a.4 referenciado em `axe_lib.php`.*
+*Documentação alinhada ao fork (Axe 0.98a.4 em `axe_lib.php`, tema panzer3 em HTML5, Composer opcional).*

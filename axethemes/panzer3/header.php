@@ -1,6 +1,6 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head profile="http://gmpg.org/xfn/11">
+<!DOCTYPE html>
+<html lang="%%HTMLLANG%%">
+<head>
 	<meta charset="utf-8">
 	<title>%%PAGETITLE%%</title>
 	<meta name="HandheldFriendly" content="True">
@@ -16,7 +16,7 @@
 	<meta name="twitter:description" content="%%PAGEDESC%%">
 	<meta name="twitmsg" content="%%POSTTWIT%%">
 	<meta property="og:title" content="%%PAGETITLE%%">
-	<meta property="og:site_name" content="%%PAGEDESC%%">
+	<meta property="og:site_name" content="%%BLOGTITLE%%">
 	<meta name="twitter:image" content="%%PAGEICON%%">
 	<meta property="og:image" content="%%PAGEICON%%">
 	<meta property="og:url" content="%%PAGEURL%%">
@@ -27,14 +27,14 @@
 	<link rel="canonical" href="%%PAGEURL%%">
 	<link href="%%BLOGURL%%%%THEMESPATH%%%%THEME%%images/favicon.png" rel="icon">
 	<link href="%%BLOGURL%%%%THEMESPATH%%%%THEME%%images/apple-touch-icon.png" rel="apple-touch-icon">
-	<link href="%%BLOGURL%%%%THEMESPATH%%%%THEME%%css/style.css?r=6" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="%%BLOGURL%%%%THEMESPATH%%%%THEME%%css/style.css?v=%%CSSVERSION%%" media="screen, projection" rel="stylesheet" type="text/css">
 	<link href="%%FEEDURL%%" rel="alternate" title="%%BLOGTITLE%% RSS Feed" type="application/rss+xml">
 </head>
 <body>
 	<div id="page">
 			<div>
-				<div id="header">	
+				<header id="header" role="banner">
 					<h1><a href="%%BLOGURL%%">%%BLOGTITLE%%</a></h1>
-				</div>
+				</header>
 				<div id="wrapper">
-					<div id="content">
+					<main id="content" role="main">

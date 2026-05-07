@@ -22,8 +22,8 @@
 // 		servidor no arquivo axe_config.php, e não aqui.
 // 		***** aqui você não precisa editar nada *****
 
-
-
+require_once __DIR__.'/lib/validate_paths.php';
+require_once __DIR__.'/lib/markdown.php';
 
 /************************************************************************
 				Funções do template do blog
@@ -39,12 +39,23 @@ function axe_init() {
 	global $axe_exepath;
 	global $adpages;
 	
-	require $configfiledir."axe_config.php";	
+	require $configfiledir."axe_config.php";
+
+	$axeRoot = dirname(rtrim($axedir, '/\\'));
+	$vendorAutoload = $axeRoot.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php';
+	if (is_readable($vendorAutoload)) {
+		require_once $vendorAutoload;
+	}
+	if (!array_key_exists('USE_MARKDOWN', $blogparms)) {
+		$blogparms['USE_MARKDOWN'] = false;
+	}
 
 	// carrega módulo exclusivo do Efetividade, quando presente
 	if (file_exists($configfiledir."axe_filtraads.php")) {
 		include $configfiledir."axe_filtraads.php";
-		inicializa_filtro_ads();
+		if (function_exists('inicializa_filtro_ads')) {
+			inicializa_filtro_ads();
+		}
 	}
 		
 	// confirma que diretórios do axe_config terminam com / e existem 	
@@ -58,7 +69,11 @@ function axe_init() {
 	// confirma que URLs do axe_config terminam com / 	
 	$blogparms["BLOGURL"]=valida_url($blogparms["BLOGURL"],"BLOGURL");
 	$blogparms["THEMESPATH"]=valida_url($blogparms["THEMESPATH"],"THEMESPATH");
-	$blogparms["PREVIEWSBASEURL"]=valida_url($blogparms["PREVIEWSBASEURL"],"PREVIEWSBASEURL");	
+	$blogparms["PREVIEWSBASEURL"]=valida_url($blogparms["PREVIEWSBASEURL"],"PREVIEWSBASEURL");
+
+	if (!isset($blogparms['HTMLLANG']) || $blogparms['HTMLLANG'] === '') {
+		$blogparms['HTMLLANG'] = str_replace('_', '-', $blogparms['BLOGLOCALE']);
+	}
 
 	$blogparms["PAGETITLE"] = $blogparms["BLOGTITLE"];
 	$blogparms["PAGEDESC"] = "";
@@ -110,10 +125,13 @@ function axe_init() {
 	}	
 	carrega_destaques();
 	setquadrorecentes();
-	$blogparms=aplica_plugins('blogparms',$blogparms);	
+	$blogparms=aplica_plugins('blogparms',$blogparms);
+	$cssAbs = $blogparms["THEMESDIR"].$blogparms["THEME"].'css/style.css';
+	$blogparms['CSSVERSION'] = is_readable($cssAbs) ? (string)filemtime($cssAbs) : '0';
+	carrega_blogparmlist();
 }
 
-function carrega_blogparmlist() {
+function carrega_blogparmlist(): void {
 	global $blogparmslist;
 	global $transfblogparmslist;
 	global $blogparms;
@@ -122,79 +140,58 @@ function carrega_blogparmlist() {
 	}
 }
 
-function valida_dir($dir,$nome) {
-	if (0===strlen($dir)) axe_error("Configuração: $nome indefinido ou vazio");
-	if (substr($dir,-1)!="/") $dir.="/"; 
-	if (!is_dir($dir)) axe_error("Configuração: diretório $dir inexistente");
-	if (!is_writable($dir)) axe_error("Configuração: diretório $dir sem permissão de gravação");
-	return($dir);	
-}
-
-function valida_path($dir,$nome) {
-	if (0===strlen($dir)) axe_error("Configuração: $nome indefinido ou vazio");
-	if (substr($dir,-1)!="/") $dir.="/"; 
-	return($dir);	
-}
-
-function valida_url($url,$nome="") {
-	if (0===strlen($url)) axe_error("Configuração: $nome indefinido ou vazio");
-	if (substr($url,-1)!="/") $url.="/"; 
-	return($url);	
-}
-
-
-function setpagetitle($pagetitle) {
+function setpagetitle(string $pagetitle): void {
 	global $blogparms;
 	$blogparms["PAGETITLE"] = removequotes($pagetitle);	
 	carrega_blogparmlist();
 }
 
-function setquadrorecentes() {
+function setquadrorecentes(): void {
 	global $blogparms;
 	$blogparms["QUADRORECENTES"] = try_file_get_contents(substparms("%%POSTSDIR%%")."recentes.html");	
 	carrega_blogparmlist();
 }
 
-function setmonthlyindexdate($date) {
+function setmonthlyindexdate(string $date): void {
 	global $blogparms;
 	$blogparms["MONTHLYINDEXDATE"] = $date;	
 	carrega_blogparmlist();
 }
 
-function setmonthlyindextitle($title) {
+function setmonthlyindextitle(string $title): void {
 	global $blogparms;
 	$blogparms["MONTHLYINDEXTITLE"] = $title;	
 	carrega_blogparmlist();
 }
 
 
-function setnavlinks($navlinks) {
+function setnavlinks(string $navlinks): void {
 	global $blogparms;
 	$blogparms["NAVLINKS"] = $navlinks;	
 	carrega_blogparmlist();
 }
 
-function setpageicon($icon) {
+function setpageicon(string $icon): void {
 	global $blogparms;
 	$blogparms["PAGEICON"] = $icon;	
 	carrega_blogparmlist();
 }
 
-function setpageurl($url) {
+function setpageurl(string $url): void {
 	global $blogparms;
 	$blogparms["PAGEURL"] = $url;	
 	carrega_blogparmlist();
 }
 
 
-function setpagedesc($description) {
+function setpagedesc(string $description): void {
 	global $blogparms;
 	$blogparms["PAGEDESC"] = removequotes($description);	
 	carrega_blogparmlist();
 }
 
 
-function substparms($trecho) {
+function substparms(string $trecho): string {
 // aplica o template de parâmetros do blog a um texto
 	global $transfblogparmslist;
 	global $transfpost;
@@ -217,7 +214,7 @@ function substparms($trecho) {
 }
 
 
-function blogparm($parametro)	{
+function blogparm(string $parametro): string	{
 // Retorna um parâmetro sobre o blog
 	global $blogparms;
 	global $transfpost;
@@ -255,6 +252,9 @@ function loadpostvars() {
 	unset($GLOBALS['transfpost']);
 	global $transfpost;
 	if (isset($POST)) {
+		if (isset($POST['POSTBODY'])) {
+			$POST['POSTBODY'] = axe_prepare_post_body($POST['POSTBODY']);
+		}
 		foreach($POST as $origem => $parm) {
 			$transfpost["%%".$origem."%%"]=$parm;		
 		}
@@ -341,7 +341,7 @@ function loadpostvars() {
 }
 
 
-function substpostvars($trecho) {
+function substpostvars(string $trecho): string {
 	global $POST;
 	global $transfpost;
 	$trecho=preg_replace('/(%%#[^#]*#%%)/',"<!-- \\1 -->",$trecho); // remove itens que os plugins nao processaram
@@ -349,7 +349,7 @@ function substpostvars($trecho) {
 	return $trecho;
 }
 
-function authorbio($author) {
+function authorbio(string $author): string {
 	$authorfile=substparms('%%BLOGROOT%%')."authors/".normaliza($author).".html";
 	$bio=try_file_get_contents($authorfile);
 	if(empty($bio)) $bio="Este artigo foi publicado em ".substpostvars("%%POSTDATE%%")." por $author.";
@@ -362,7 +362,7 @@ function authorbio($author) {
 *************************************************************************/
 
 
-function gera_draft($arquivo,$quiet=false) {
+function gera_draft(string $arquivo, bool $quiet=false): string {
 // gera um draft a partir de um arquivo de entrada fornecido pelo usuario
 	global $MYPOST;
 	global $noold;
@@ -452,7 +452,7 @@ function gera_draft($arquivo,$quiet=false) {
 	}	
 }
 
-function hack_the_header($header) {
+function hack_the_header(string $header): string {
 // an ugly hack to substitute some header fields on local tests
 // see also references to @@PAGEICON@@ on single, indexes and monthly
 	global $blogparms;
@@ -462,7 +462,7 @@ function hack_the_header($header) {
 	return $header;
 }
 
-function first_image($body) {
+function first_image(string $body): string {
 // retorna a URL da primeira imagem referenciada em HTML no $body
     $s="";
 	if (preg_match('/<img/i',$body)) {
@@ -480,10 +480,12 @@ function first_image($body) {
 *************************************************************************/
 
 
-function cria_tagindex($tag,$force=false) {
+function cria_tagindex(string $tag, bool $force=false): string {
 // gera os indices para UMA tag
 	global $tritem;
 	global $sparsedebug;
+	$nome = "";
+	$item = "";
 	$postsfilename=blogparm('INPUTDIR').'tags/'."catalog-$tag.txt";
 	$indexfilename=blogparm('POSTSDIR')."tag-$tag.html";
 	$gerar=(!is_file($indexfilename));
@@ -562,7 +564,9 @@ function rebuild_tags($force=false) {
 				Funções de formatação e tratamento de strings
 *************************************************************************/
 
-function corrigehtml($trecho) {
+function corrigehtml(string $trecho): string {
+	$contarod = 0;
+	$rodapes = array();
 	$transf = array("<i>" => "<em>", "</i>" => "</em>", 
 			"<*>" => "<span class=\"marker\">", "</*>" => "</span>", 
 			"<b>" => "<strong>", "</b>" => "</strong>",
@@ -582,7 +586,7 @@ function corrigehtml($trecho) {
 		$trecho=preg_replace('/\[@@rod:[^\]]*\]/',"<sup><a title=\"".removequotes(strip_tags($m[1]))."\" name=\"ret-$rod_ref\"class=rodape_link href=\"#$rod_ref\">$contarod</a></sup>",$trecho,1);		
 	}
 	$contarod=0;
-	if ($rodapes>0) {
+	if (count($rodapes) > 0) {
 		$trecho.="<div id=\"rodapes\"><div id=\"rodapes_halfline\">&nbsp;</div><ol>";
 		foreach ($rodapes as $key => $value) {
 			$contarod++;
@@ -596,17 +600,17 @@ function corrigehtml($trecho) {
 	return $trecho;
 }
 
-function removequotes($s) {
+function removequotes(string $s): string {
 	return preg_replace('/"/',"&quot;",$s);
 }
 
-function button($texto,$url) {
+function button(string $texto, string $url): string {
 	return("<a href=\"$url\" class=\"button\">$texto</a>");
 }
 
 
 
-function buscaparagrafos($texto,$quantos=3,$limite=1000) {
+function buscaparagrafos(string $texto, int $quantos=3, int $limite=1000): string {
 		//trim(cutonword(strip_tags(corrigehtml($POST['POSTBODY'])),350));
 		//:cntrl:
 	$texto=strip_tags(corrigehtml($texto));
@@ -623,7 +627,7 @@ function buscaparagrafos($texto,$quantos=3,$limite=1000) {
 
 
 
-function insereanunciocentral($texto) {
+function insereanunciocentral(string $texto): string {
 		//trim(cutonword(strip_tags(corrigehtml($POST['POSTBODY'])),350));
 		//:cntrl:
 		// if defined... blogparm('CENTERAD')
@@ -672,7 +676,7 @@ function insereanunciocentral($texto) {
 
 
 
-function cutonword($trecho,$len) {
+function cutonword(string $trecho, int $len): string {
 // corta uma string na primeira frase concluída após o 80º caracter --
 // ou no limite de uma palavra, dentro de um tamanho máximo
 	$trecho.=" ";
@@ -690,14 +694,14 @@ function cutonword($trecho,$len) {
 	return trim($trecho.$postbutton);
 }
 
-function s_rss($saida)	 {
+function s_rss(string $saida): string	 {
 // Sanitiza uma string de saída para o feed rss
 	$saida=htmlentities($saida, ENT_QUOTES|ENT_DISALLOWED|ENT_XML1, 'UTF-8');
 	return $saida;
 }	
 
 
-function normaliza($string,$extra="") {
+function normaliza(string $string, string $extra=""): string {
 // tks allixsenos 
     $table = array(
         'Š'=>'S', 'š'=>'s', 'Đ'=>'Dj', 'đ'=>'dj', 'Ž'=>'Z', 'ž'=>'z', 'Č'=>'C', 'č'=>'c', 'Ć'=>'C', 'ć'=>'c',
@@ -706,7 +710,7 @@ function normaliza($string,$extra="") {
         'Õ'=>'O', 'Ö'=>'O', 'Ø'=>'O', 'Ù'=>'U', 'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss',
         'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a', 'æ'=>'a', 'ç'=>'c', 'è'=>'e', 'é'=>'e',
         'ê'=>'e', 'ë'=>'e', 'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ð'=>'o', 'ñ'=>'n', 'ò'=>'o', 'ó'=>'o',
-        'ô'=>'o', 'õ'=>'o', 'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'ý'=>'y', 'þ'=>'b',
+        'ô'=>'o', 'õ'=>'o', 'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'þ'=>'b',
         'ÿ'=>'y', 'Ŕ'=>'R', 'ŕ'=>'r', ' '=>'-'
     );   
     $string=strtolower(strtr(trim($string), $table));
@@ -718,13 +722,13 @@ function normaliza($string,$extra="") {
 }
 
 
-function preg_quebras($quebras) {
+function preg_quebras(array $quebras): string {
 // chamada pela função paragrafos()
 	$conv=str_replace("\n", "<xXzZ />", $quebras[0]);
 	return($conv);
 }
 
-function paragrafos($trecho) {
+function paragrafos(string $trecho): string {
 // insere <p> onde houver dupla quebra.
 // Tks André Tobias && http://ma.tt/2003/01/updated-autop/
 	if ( (blogparm('BREAKLINES') === false) || (trim($trecho) === '') ) return '';
@@ -815,7 +819,7 @@ function verifica_agendamentos() {
 	}
 }
 
-function simula_prioridades($hora,$intervalo) {
+function simula_prioridades(int $hora, int $intervalo): void {
 // mostra em que horários seriam postados cada um dos posts priorizados 
 // presentes no DRAFTSDIR, a partir da $hora, a cada $intervalo minutos.
 	$minutos=0;
@@ -836,14 +840,14 @@ function verifica_prioritarios() {
 }
 
 
-function agenda_post($dia,$hora,$minuto,$post) {
+function agenda_post(string $dia, string $hora, string $minuto, string $post): void {
 // agenda um draft para ir ao ar no dia e horário mencionado
 	$arquivo=blogparm('DRAFTSDIR').$post;
 	if (!is_file($arquivo)) {
 		axe_error('Não existe o arquivo '.$arquivo,E_USER_ERROR);
 		die;
 	}
-	$novonome=blogparm('DRAFTSDIR')."@$dia-$hora-$minuto_$post";
+	$novonome=blogparm('DRAFTSDIR')."@$dia-$hora-$minuto"."_".$post;
 	rename($arquivo,$novonome);
 	dmsg("Agendei post para dia $dia ($hora:$minuto): $post");
 }
@@ -908,7 +912,7 @@ function sched_notify_post() {
 	}
 }
 
-function sched_one_notification($dia,$hora,$minuto,$texto) {
+function sched_one_notification(string $dia, string $hora, string $minuto, string $texto): void {
 // agenda UMA notificacao para ir ao ar no dia e horário mencionado
 	$notifyid=normaliza(substr($texto,0,30));
 	$dia=sprintf("%02d",$dia);
@@ -920,7 +924,7 @@ function sched_one_notification($dia,$hora,$minuto,$texto) {
 }
 
 
-function do_notify_post($texto) {
+function do_notify_post(string $texto): void {
 // executa uma notificação de post - esta função nunca é chamada na configuração default do Axe
 	global $notifyparms;
 	if (isset($notifyparms['NOTIFYCMD'])) {	
@@ -974,14 +978,14 @@ function quadro_destaques() {
 				Funções de tratamento de arquivos
 *************************************************************************/
 
-function try_file_get_contents($file) {
+function try_file_get_contents(string $file, bool $use_include_path = false): string {
 	$s="";
-	if (is_readable($file)) $s=file_get_contents($file);
+	if (is_readable($file)) $s=file_get_contents($file, $use_include_path);
 	return $s;
 }
 
 
-function criasymlink($nome,$numero) {
+function criasymlink(string $nome, string $numero): void {
 // cria um symlink numérico pros posts importados do WordPress
 	$dir=blogparm('POSTSDIR')."links/";
 	$link=$dir.'link-'.$numero.".html";
@@ -996,7 +1000,7 @@ function criasymlink($nome,$numero) {
     decho("Criei o redirect $redir");     // para ".blogparm('BLOGURL')."$nome"); 
 }
 
-function apagasymlink($nome,$numero) {
+function apagasymlink(string $nome, string $numero): void {
 // apaga symlink numérico de post importado do WordPress (ao removê-lo)
 	$dir=blogparm('POSTSDIR')."links/";
 	$link=$dir.'link-'.$numero.".html";
@@ -1012,7 +1016,7 @@ function apagasymlink($nome,$numero) {
 	
 }
 
-function move_oldfile($fullpath) {
+function move_oldfile(string $fullpath): void {
 // cria um symlink numérico pros posts importados do WordPress
 	global $quiet;
 	$dest=preg_replace('/\/([^\/]+)$/',"/old/\\1",$fullpath);
@@ -1021,7 +1025,7 @@ function move_oldfile($fullpath) {
 }
 
 
-function gravaarquivonaraiz($nome,$conteudo) {
+function gravaarquivonaraiz(string $nome, string $conteudo): bool {
 // grava um arquivo atomicamente na raiz do blog (para indices, tags, feed)
 	global $quiet;
 	global $sparsedebug;
@@ -1049,15 +1053,15 @@ function gravaarquivonaraiz($nome,$conteudo) {
 	return($gravoumesmo);
 }
 
-function grava_postsrecentes($postsrecentes) {
+function grava_postsrecentes(string $postsrecentes): void {
 // cria um quadro de posts recentes para uso em temas - #2014
 	//$postsrecentes="<div id=quadropostsrecentes><ul>\n".$postsrecentes."</ul></div>\n";
 	gravaarquivonaraiz("recentes.html",$postsrecentes);
-	setquadrorecentes($postsrecentes);
+	setquadrorecentes();
 }
 
 
-function gravaarquivohtml($nome,$conteudo,$force = false,$preview=false) {
+function gravaarquivohtml(string $nome, string $conteudo, bool $force = false, bool $preview=false): bool {
 // grava um arquivo atomicamente, para uso no postsdir e previewdir
 	global $quiet;
 	global $sparsedebug;
@@ -1116,7 +1120,7 @@ function gravaarquivohtml($nome,$conteudo,$force = false,$preview=false) {
 }
 
 
-function gravaarquivo($nome,$conteudo,$force = false) {
+function gravaarquivo(string $nome, string $conteudo, bool $force = false): bool {
 // grava um arquivo atomicamente dentro do blogroot
 	global $quiet;
 	global $sparsedebug;
@@ -1173,7 +1177,7 @@ function gravaarquivo($nome,$conteudo,$force = false) {
 }
 
 
-function gravadescriptor($nome,$conteudo,$force=false) {
+function gravadescriptor(string $nome, string $conteudo, bool $force=false, bool $preview=false): bool {
 // grava um arquivo atomicamente, para uso no postsdir e previewdir
 	global $quiet;
 	global $sparsedebug;
@@ -1230,7 +1234,7 @@ function gravadescriptor($nome,$conteudo,$force=false) {
 }
 
 
-function lista_arquivos_processaveis($titulo,$fullpath,$comando="") {
+function lista_arquivos_processaveis(string $titulo, string $fullpath, string $comando=""): void {
 	if (strlen($comando)>1) $comando.=" ";
 	echo "Informe um nome de arquivo como parâmetro.\n\n";
 	echo "$titulo\n";
@@ -1246,7 +1250,7 @@ function lista_arquivos_processaveis($titulo,$fullpath,$comando="") {
 				Funções do catálogo de posts
 *************************************************************************/
 
-function loadpostvars_fromcatalog($fpost) {
+function loadpostvars_fromcatalog(string $fpost): void {
 // carrega as variáveis do template de posts diretamente a partir do catálogo
 	global $POST;
 	$k=preg_split('/;;/',$fpost);	
@@ -1261,7 +1265,7 @@ function loadpostvars_fromcatalog($fpost) {
 		
 }
 
-function catalog_add($nome,$conteudo) {
+function catalog_add(string $nome, string $conteudo): void {
 // adiciona uma entrada a um dos catalogos de posts na pasta descriptors
 	$file = blogparm('INPUTDIR')."$nome";	
 	$conteudo=preg_replace('/[[<[:cntrl:]]]/',"",$conteudo);
@@ -1269,7 +1273,7 @@ function catalog_add($nome,$conteudo) {
 	decho("Adicionei um post ao catálogo blogparm('BLOGROOT').$nome;");
 }
 
-function catalog_replace($nome,$conteudo) {
+function catalog_replace(string $nome, string $conteudo): void {
 // substitui uma entrada em um dos catalogos de posts na pasta descriptors
 	global $sparsedebug;
 	$s=$sparsedebug;
@@ -1284,7 +1288,7 @@ function catalog_replace($nome,$conteudo) {
 	$sparsedebug=$s;
 }
 
-function catalog_del($caminho,$catname) {
+function catalog_del(string $caminho, string $catname): void {
 // apaga um post com este nome que exista no catálogo mencionado
 	if (!is_readable(blogparm('INPUTDIR').$catname)) {
 		axe_warning("catalog_del: não existe o arquivo ".blogparm('INPUTDIR').$catname);
@@ -1302,7 +1306,7 @@ function catalog_del($caminho,$catname) {
 	file_put_contents(blogparm('INPUTDIR').$catname,$catalogo,LOCK_EX);	
 }
 
-function already_exists($name) {
+function already_exists(string $name): bool {
 // verifica se um post com o mesmo nome já existe no catálogo principal
 	if (!is_readable(blogparm('INPUTDIR')."posts/catalog.txt")) return false;
 	$catalogo=file(blogparm('INPUTDIR')."posts/catalog.txt");
@@ -1312,7 +1316,7 @@ function already_exists($name) {
 }
 
 
-function rebuild_catalogs() {
+function rebuild_catalogs(): void {
 	// utilitario para recriar os catalogos de posts e de tags caso sejam corrompidos
 	$raiz=blogparm('INPUTDIR')."posts/";
 	$raiztags=blogparm('INPUTDIR')."tags/";
@@ -1324,6 +1328,9 @@ function rebuild_catalogs() {
 			foreach(glob($mes."/*.php") as $arq) {
 				dmsg("		$arq");
 				include $arq;
+				if (isset($POST['POSTBODY'])) {
+					$POST['POSTBODY'] = axe_prepare_post_body($POST['POSTBODY']);
+				}
 				$short=cutonword(strip_tags(corrigehtml($POST['POSTBODY'])),250);
 				$short=preg_replace('/[[:cntrl:]]/',"",$short);
 				if (blogparm('YEARLY')=="01") {
@@ -1378,7 +1385,7 @@ function rebuild_catalogs() {
 				Funções de sitemap
 *************************************************************************/
 
-function sitemap_entry($loc,$last="",$pri="0.5") {
+function sitemap_entry(string $loc, string $last = "", string $pri = "0.5"): string {
 	$s="		<url>\n";
 	$s.="			<loc>$loc</loc>\n";
 	if ($last) {
@@ -1390,7 +1397,7 @@ function sitemap_entry($loc,$last="",$pri="0.5") {
 	return $s;
 }
 
-function sitemap() {
+function sitemap(): string {
 	global $blogparms;
 	$postsfiles=file(blogparm('INPUTDIR').'posts/'."catalog.txt",FILE_IGNORE_NEW_LINES);
 	sort($postsfiles);
@@ -1431,7 +1438,7 @@ function sitemap() {
 				Funções de plugins
 *************************************************************************/
 
-function registra_plugins() {
+function registra_plugins(): void {
 	global $pluginlist;
 	$files=glob(blogparm('PLUGINSDIR').'*.php');
 	if (!empty($files)) {
@@ -1443,7 +1450,7 @@ function registra_plugins() {
 	}	
 }
 
-function aplica_plugins($tipo, $conteudo='', $p1='', $p2='', $p3='', $p4='') {
+function aplica_plugins(string $tipo, mixed $conteudo = '', mixed $p1 = '', mixed $p2 = '', mixed $p3 = '', mixed $p4 = ''): mixed {
 	global $pluginlist;
 	$retorno=$conteudo;
 	if (isset($pluginlist)) {
@@ -1462,7 +1469,7 @@ function aplica_plugins($tipo, $conteudo='', $p1='', $p2='', $p3='', $p4='') {
 				Funções de debug e mensagens
 *************************************************************************/
 	
-function decho($texto,$level=E_USER_NOTICE) {
+function decho(string $texto, int $level=E_USER_NOTICE): void {
 	global $quiet;
 	global $verbose;
 	static $contadecho;
@@ -1483,7 +1490,7 @@ function decho($texto,$level=E_USER_NOTICE) {
 	$contadecho++;
 }
 
-function dmsg($texto) {
+function dmsg(string $texto): void {
 	global $quiet;
 	if (!$quiet) {
 		$csi=chr(27).'[';
@@ -1492,14 +1499,14 @@ function dmsg($texto) {
 	}	
 }
 
-function axe_error($texto,$level=E_USER_ERROR) {
+function axe_error(string $texto, int $level=E_USER_ERROR): never {
 	echo("[axe] ERRO FATAL: $texto\n");
 	debug_print_backtrace();
 	echo("\n[axe] Interrompendo a operação. Falha registrada: $texto\n");	
 	die(5);
 }
 	
-function axe_warning($texto) {
+function axe_warning(string $texto): void {
 	debug_print_backtrace();
 	echo("\n[axe] AVISO: $texto\n");	
 }
