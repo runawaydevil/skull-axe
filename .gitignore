@@ -17,3 +17,11 @@
 
 ### Temporários
 *.temp
+
+### Catálogos gerados (reconstruíveis)
+/axe/descriptors/**/catalog*.txt
+/axe/descriptors/tags/catalog-*.txt
+
+### Pastas de trabalho/backup (reconstruíveis)
+/axe/drafts/old/
+/axe/staging/old/
