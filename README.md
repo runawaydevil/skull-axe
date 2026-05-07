@@ -2,7 +2,7 @@
 
 O projeto original do **Axe** é de **[Augusto Campos](http://augustocampos.net/)** — CMS estático em PHP (sem base de dados).
 
-**Este repositório** é um *fork* mantido por **Pablo Murad** para o seu blog pessoal. Inclui, entre outras coisas: documentação em `docs/`, **Markdown opcional** (`USE_MARKDOWN` + Composer), **cache bust** do CSS do tema (`%%CSSVERSION%%`), **CLI** refatorada (`axe/cli_dispatch.php`), módulos em **`axe/lib/`**, **HTML5 e landmarks** no tema panzer3, testes **PHPUnit** e **GitHub Actions** (lint + testes). O motor base segue o Axe: HTML estático na raiz; código em `axe/`; visual em `axethemes/`.
+**Este repositório** é um *fork* do Axe com ajustes para uso moderno (desenvolvimento local e CI) e documentação em português. Inclui, entre outras coisas: documentação em `docs/`, **Markdown opcional** (`USE_MARKDOWN` + Composer), **cache bust** do CSS do tema (`%%CSSVERSION%%`), **CLI** (`axe/axe.php` + `axe/cli_dispatch.php`), módulos em **`axe/lib/`**, tema `panzer3` com **HTML5/landmarks**, testes **PHPUnit** e **GitHub Actions** (lint + testes). O motor base segue o Axe: HTML estático na raiz; código em `axe/`; visual em `axethemes/`.
 
 ## Requisitos
 
@@ -15,10 +15,10 @@ O projeto original do **Axe** é de **[Augusto Campos](http://augustocampos.net/
 1. Copie `axe/axe_config_exemplo.php` para `axe/axe_config.php` e ajuste caminhos e URLs ao seu ambiente.
 2. (Opcional) Na raiz do repositório: `composer install` — necessário se usar `$blogparms["USE_MARKDOWN"] = true` em `axe_config.php`.
 3. Escreva um artigo em texto/HTML em `axe/staging/` (título na primeira linha; ver documentação).
-4. Na pasta `axe/` execute:
+4. Na raiz do repositório, execute:
 
    ```bash
-   php axe.php -dP nome-do-ficheiro.txt
+   php axe/axe.php -dP nome-do-ficheiro.txt
    ```
 
    Isto gera o draft, publica e faz rebuild da capa, feed e índices.
@@ -61,4 +61,4 @@ O código do Axe (ficheiros em `axe/` salvo configuração local) segue a licen�
 ## Créditos
 
 - **Axe CMS (projeto original)** — Augusto Campos · [augustocampos.net](http://augustocampos.net/).
-- **Fork e uso** — Pablo Murad utiliza este repositório para o seu blog; inclui modificações próprias e documentação em português neste ramo.
+- **Fork** — adaptações e documentação para facilitar desenvolvimento, testes e uso local.
